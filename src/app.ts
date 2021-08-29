@@ -5,16 +5,17 @@ import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
+import MongoDBInterface from "./mongodb-interface";
 
 dotenv.config();
 
 const app = express();
 
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
+export const io = new Server(httpServer, {
   cors: {
     origin: [/^https:\/\/.*toccatech.com$/, /^(http|https):\/\/localhost:[0-9]{1,6}$/],
-  }
+  },
 });
 
 io.on("connection", (socket) => {
@@ -37,9 +38,16 @@ app.use(
 // Helmet initialisation with all the defaults
 app.use(helmet());
 
-httpServer.listen(3000, () => {
-  console.log("Server listening on port 3000! App url: http://localhost:3000");
-});
+// Connect to MongoDB
+const URI = `mongodb://${process.env.DB_USER}:${process.env.DB_PWD}@${process.env.DB_HOST}/?authSource=admin`;
+export const db = new MongoDBInterface(URI);
+
+(async () => {
+  await db.connect("raspidb");
+  httpServer.listen(3000, () => {
+    console.log("Server listening on port 3000! App url: http://localhost:3000");
+  });
+})();
 
 app.get("/", (req, res) => {
   res.send({
