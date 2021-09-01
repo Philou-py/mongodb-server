@@ -1,4 +1,3 @@
-import Joi from "joi";
 import { MongoClient, Db, Filter, FindOptions, ObjectId, Document, Collection } from "mongodb";
 
 interface MongoError {

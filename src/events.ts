@@ -1,5 +1,3 @@
-import { MongoServerError } from "mongodb";
-
 export interface MongoError {
   status: "NOT_FOUND" | "MONGO_SERVER_ERROR";
   message: string;
