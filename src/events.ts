@@ -1,5 +1,7 @@
+import { MongoServerError } from "mongodb";
+
 export interface MongoError {
-  status: "NOT_FOUND";
+  status: "NOT_FOUND" | "MONGO_SERVER_ERROR";
   message: string;
 }
 
@@ -12,7 +14,7 @@ export interface ClientEvents {
     collectionName: string,
     filter: object,
     options: object,
-    callback: Callback<object[]>
+    callback: Callback<object[] | null>
   ) => void;
 
   "collection:findOne": (

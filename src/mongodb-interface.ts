@@ -1,7 +1,8 @@
+import Joi from "joi";
 import { MongoClient, Db, Filter, FindOptions, ObjectId, Document, Collection } from "mongodb";
 
 interface MongoError {
-  status: "NOT_FOUND";
+  status: "NOT_FOUND" | "MONGO_SERVER_ERROR";
   message: string;
 }
 
@@ -41,28 +42,44 @@ export default class MongoDBInterface {
     }
   }
 
+  private capitalise(str: string) {
+    return str[0].toUpperCase() + str.slice(1);
+  }
+
   async find(collectionName: string, filter?: Filter<Document>, options?: FindOptions) {
-    const collection = this.getCollection(collectionName);
-    const cursor = collection.find(filter ? filter : {}, options);
-    const data = await cursor.toArray();
+    let data = null;
     let error: MongoError | undefined;
-    if (data.length === 0) {
-      error = {
-        status: "NOT_FOUND",
-        message: "No documents matched the query!",
-      };
+    try {
+      const collection = this.getCollection(collectionName);
+      const cursor = collection.find(filter ? filter : {}, options);
+      data = await cursor.toArray();
+      if (data.length === 0) {
+        error = {
+          status: "NOT_FOUND",
+          message: "No documents matched the query!",
+        };
+      }
+    } catch (err: any) {
+      error = { status: "MONGO_SERVER_ERROR", message: this.capitalise(err.message) };
+    } finally {
+      return { data, error };
     }
-    return { data, error };
   }
 
   async findOne(collectionName: string, filter: Filter<Document>, options?: FindOptions) {
-    const collection = this.getCollection(collectionName);
-    const doc = await collection.findOne(filter, options);
+    let doc = null;
     let error: MongoError | undefined;
-    if (!doc) {
-      error = { status: "NOT_FOUND", message: "Document not found!" };
+    try {
+      const collection = this.getCollection(collectionName);
+      doc = await collection.findOne(filter, options);
+      if (!doc) {
+        error = { status: "NOT_FOUND", message: "Document not found!" };
+      }
+    } catch (err: any) {
+      error = { status: "MONGO_SERVER_ERROR", message: err.message };
+    } finally {
+      return { data: doc, error };
     }
-    return { data: doc, error };
   }
 
   async findOneWithId(collection: string, docId: string) {
@@ -70,27 +87,42 @@ export default class MongoDBInterface {
   }
 
   async insertOne(collectionName: string, doc: Document) {
-    const collection = this.getCollection(collectionName);
-    const docWithTimestamps = this.withTimestamps(doc, "created");
-    const { insertedId } = await collection.insertOne(docWithTimestamps);
-    const newDoc = { ...docWithTimestamps, _id: insertedId };
-    return { data: newDoc };
+    let newDoc = null;
+    let error: MongoError | undefined;
+    try {
+      const collection = this.getCollection(collectionName);
+      const docWithTimestamps = this.withTimestamps(doc, "created");
+      const { insertedId } = await collection.insertOne(docWithTimestamps);
+      newDoc = { ...docWithTimestamps, _id: insertedId };
+    } catch (err: any) {
+      error = { status: "MONGO_SERVER_ERROR", message: err.message };
+    } finally {
+      return { data: newDoc, error };
+    }
   }
 
   async updateOne(collectionName: string, filter: Filter<Document>, updateDoc: Document) {
-    const collection = this.getCollection(collectionName);
-    const { value: updatedDocument } = await collection.findOneAndUpdate(
-      filter,
-      {
-        $set: this.withTimestamps(updateDoc, "updated"),
-      },
-      { returnDocument: "after" }
-    );
+    let updatedDoc = null;
     let error: MongoError | undefined;
-    if (!updatedDocument) {
-      error = { status: "NOT_FOUND", message: "Document not found!" };
+
+    try {
+      const collection = this.getCollection(collectionName);
+      const { value } = await collection.findOneAndUpdate(
+        filter,
+        {
+          $set: this.withTimestamps(updateDoc, "updated"),
+        },
+        { returnDocument: "after" }
+      );
+      updatedDoc = value;
+      if (!updatedDoc) {
+        error = { status: "NOT_FOUND", message: "Document not found!" };
+      }
+    } catch (err: any) {
+      error = { status: "MONGO_SERVER_ERROR", message: err.message };
+    } finally {
+      return { data: updatedDoc, error };
     }
-    return { data: updatedDocument, error };
   }
 
   async updateOneWithId(collection: string, docId: string, updateDoc: Document) {
@@ -98,17 +130,24 @@ export default class MongoDBInterface {
   }
 
   async replaceOne(collectionName: string, filter: Filter<Document>, replaceDoc: Document) {
-    const collection = this.getCollection(collectionName);
-    const { value: updatedDocument } = await collection.findOneAndReplace(
-      filter,
-      this.withTimestamps(replaceDoc, "created"),
-      { returnDocument: "after" }
-    );
+    let updatedDoc = null;
     let error: MongoError | undefined;
-    if (!updatedDocument) {
-      error = { status: "NOT_FOUND", message: "Document not found!" };
+    try {
+      const collection = this.getCollection(collectionName);
+      const { value } = await collection.findOneAndReplace(
+        filter,
+        this.withTimestamps(replaceDoc, "created"),
+        { returnDocument: "after" }
+      );
+      updatedDoc = value;
+      if (!updatedDoc) {
+        error = { status: "NOT_FOUND", message: "Document not found!" };
+      }
+    } catch (err: any) {
+      error = { status: "MONGO_SERVER_ERROR", message: err.message };
+    } finally {
+      return { data: updatedDoc, error };
     }
-    return { data: updatedDocument, error };
   }
 
   async replaceOneWithId(collection: string, docId: string, updateDoc: Document) {
@@ -116,13 +155,20 @@ export default class MongoDBInterface {
   }
 
   async deleteOne(collectionName: string, filter: Filter<Document>) {
-    const collection = this.getCollection(collectionName);
-    const { value } = await collection.findOneAndDelete(filter);
+    let deletedDoc = null;
     let error: MongoError | undefined;
-    if (!value) {
-      error = { status: "NOT_FOUND", message: "Document not found!" };
+    try {
+      const collection = this.getCollection(collectionName);
+      const { value } = await collection.findOneAndDelete(filter);
+      deletedDoc = value;
+      if (!deletedDoc) {
+        error = { status: "NOT_FOUND", message: "Document not found!" };
+      }
+    } catch (err: any) {
+      error = { status: "MONGO_SERVER_ERROR", message: err.message };
+    } finally {
+      return { data: deletedDoc, error };
     }
-    return { data: value, error };
   }
 
   async deleteOneWithId(collection: string, docId: string) {

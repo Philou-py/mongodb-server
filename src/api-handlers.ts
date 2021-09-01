@@ -19,7 +19,7 @@ export async function find(
   collectionName: string,
   filter: Filter<Document>,
   options: FindOptions,
-  callback: Callback<object[]>
+  callback: Callback<object[] | null>
 ) {
   const result = await db.find(collectionName, filter, options);
   callback(result);
