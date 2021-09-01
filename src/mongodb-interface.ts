@@ -1,5 +1,10 @@
 import { MongoClient, Db, Filter, FindOptions, ObjectId, Document, Collection } from "mongodb";
 
+interface MongoError {
+  status: "NOT_FOUND";
+  message: string;
+}
+
 export default class MongoDBInterface {
   private client: MongoClient;
   private db!: Db;
@@ -39,13 +44,21 @@ export default class MongoDBInterface {
   async find(collectionName: string, filter?: Filter<Document>, options?: FindOptions) {
     const collection = this.getCollection(collectionName);
     const cursor = collection.find(filter ? filter : {}, options);
-    return { data: await cursor.toArray() };
+    const data = await cursor.toArray();
+    let error: MongoError | undefined;
+    if (data.length === 0) {
+      error = {
+        status: "NOT_FOUND",
+        message: "No documents matched the query!",
+      };
+    }
+    return { data, error };
   }
 
   async findOne(collectionName: string, filter: Filter<Document>, options?: FindOptions) {
     const collection = this.getCollection(collectionName);
     const doc = await collection.findOne(filter, options);
-    let error;
+    let error: MongoError | undefined;
     if (!doc) {
       error = { status: "NOT_FOUND", message: "Document not found!" };
     }
@@ -73,7 +86,7 @@ export default class MongoDBInterface {
       },
       { returnDocument: "after" }
     );
-    let error;
+    let error: MongoError | undefined;
     if (!updatedDocument) {
       error = { status: "NOT_FOUND", message: "Document not found!" };
     }
@@ -91,7 +104,7 @@ export default class MongoDBInterface {
       this.withTimestamps(replaceDoc, "created"),
       { returnDocument: "after" }
     );
-    let error;
+    let error: MongoError | undefined;
     if (!updatedDocument) {
       error = { status: "NOT_FOUND", message: "Document not found!" };
     }
@@ -105,11 +118,11 @@ export default class MongoDBInterface {
   async deleteOne(collectionName: string, filter: Filter<Document>) {
     const collection = this.getCollection(collectionName);
     const { value } = await collection.findOneAndDelete(filter);
-    let error;
+    let error: MongoError | undefined;
     if (!value) {
       error = { status: "NOT_FOUND", message: "Document not found!" };
     }
-    return { deletedDoc: value, error };
+    return { data: value, error };
   }
 
   async deleteOneWithId(collection: string, docId: string) {
@@ -164,4 +177,3 @@ export default class MongoDBInterface {
 //     const result = await db.replaceOneWithId(usersCollection, "612948f9f835e9be88db8127", update);
 //     res.send(result);
 //   });
-
