@@ -49,8 +49,8 @@ export const db = new MongoDBInterface(URI);
 
 app.get("/", (req, res) => {
   res.send({
-    ok: true,
-    message: "The application is currently under active development!",
+    message:
+      "Welcome to MongoDB Server! This API offers a real-time connection with a MongoDB database thanks to Socket.io.",
   });
 });
 
