@@ -7,6 +7,8 @@ import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
 import MongoDBInterface from "./mongodb-interface";
 import { createAPI } from "./socket-io-api";
+import RestAPIRoutes from "./rest-api";
+import TypesParser from "./query-types-parser";
 
 dotenv.config();
 
@@ -32,6 +34,8 @@ app.use(
 // Helmet initialisation with all the defaults
 app.use(helmet());
 
+app.use(TypesParser());
+
 // Connect to MongoDB
 const URI = `mongodb://${process.env.DB_USER}:${process.env.DB_PWD}@${process.env.DB_HOST}/?authSource=admin`;
 export const db = new MongoDBInterface(URI);
@@ -49,3 +53,5 @@ app.get("/", (req, res) => {
     message: "The application is currently under active development!",
   });
 });
+
+app.use("/db", RestAPIRoutes);
