@@ -6,21 +6,15 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
 import MongoDBInterface from "./mongodb-interface";
+import { createAPI } from "./socket-io-api";
 
 dotenv.config();
 
 const app = express();
 
 const httpServer = createServer(app);
-export const io = new Server(httpServer, {
-  cors: {
-    origin: [/^https:\/\/.*toccatech.com$/, /^(http|https):\/\/localhost:[0-9]{1,6}$/],
-  },
-});
 
-io.on("connection", (socket) => {
-  console.log("New connection");
-});
+createAPI(httpServer);
 
 // Parse JSON request body into req.body object
 app.use(express.json());
@@ -44,8 +38,8 @@ export const db = new MongoDBInterface(URI);
 
 (async () => {
   await db.connect("raspidb");
-  httpServer.listen(3000, () => {
-    console.log("Server listening on port 3000! App url: http://localhost:3000");
+  httpServer.listen(3001, () => {
+    console.log("Server listening on port 3001! App url: http://localhost:3001");
   });
 })();
 
