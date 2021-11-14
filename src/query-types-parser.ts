@@ -22,7 +22,7 @@ function parseObject(obj: Record<string, any>) {
   var result: Record<string, any> = {};
   var key, val;
   for (key in obj) {
-    val = parseValue(obj[key]);
+    val = parseValue(obj[key], key);
     if (val !== null) result[key] = val; // ignore null values
   }
   return result;
@@ -44,9 +44,11 @@ function parseBoolean(val: string) {
   return val === "true";
 }
 
-function parseValue(val: any) {
+function parseValue(val: any, key?: string) {
   if (typeof val == "undefined" || val == "") {
     return null;
+  } else if (key === "docId") {
+    return val;
   } else if (isBoolean(val)) {
     return parseBoolean(val);
   } else if (isArray(val)) {
