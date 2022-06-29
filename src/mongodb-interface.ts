@@ -82,7 +82,7 @@ export default class MongoDBInterface {
   }
 
   async findOneWithId(collection: string, docId: string) {
-    return await this.findOne(collection, { _id: new ObjectId(docId) });
+    return await this.findOne(collection, { _id: docId });
   }
 
   async insertOne(collectionName: string, doc: Document) {
@@ -125,7 +125,7 @@ export default class MongoDBInterface {
   }
 
   async updateOneWithId(collection: string, docId: string, updateDoc: Document) {
-    return await this.updateOne(collection, { _id: new ObjectId(docId) }, updateDoc);
+    return await this.updateOne(collection, { _id: docId }, updateDoc);
   }
 
   async replaceOne(collectionName: string, filter: Filter<Document>, replaceDoc: Document) {
@@ -150,7 +150,7 @@ export default class MongoDBInterface {
   }
 
   async replaceOneWithId(collection: string, docId: string, updateDoc: Document) {
-    return await this.replaceOne(collection, { _id: new ObjectId(docId) }, updateDoc);
+    return await this.replaceOne(collection, { _id: docId }, updateDoc);
   }
 
   async deleteOne(collectionName: string, filter: Filter<Document>) {
@@ -171,7 +171,7 @@ export default class MongoDBInterface {
   }
 
   async deleteOneWithId(collection: string, docId: string) {
-    return await this.deleteOne(collection, { _id: new ObjectId(docId) });
+    return await this.deleteOne(collection, { _id: docId });
   }
 }
 

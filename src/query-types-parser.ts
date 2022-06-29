@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { ObjectId } from "mongodb";
 
 // Similar to https://github.com/xpepermint/query-types but with TypeScript support
 
@@ -47,8 +48,8 @@ function parseBoolean(val: string) {
 function parseValue(val: any, key?: string) {
   if (typeof val == "undefined" || val == "") {
     return null;
-  } else if (key === "docId") {
-    return val;
+  } else if (key === "docId" || key === "_id") {
+    return new ObjectId(val);
   } else if (isBoolean(val)) {
     return parseBoolean(val);
   } else if (isArray(val)) {
